@@ -8,7 +8,8 @@ export default {
     extend: {},
     fontFamily: {
       robot: ["Roboto Mono", "monospace"],
-      reg:["Inconsolata", "monospace"]
+      reg: ["Inconsolata", "monospace"],
+      dem:["DM Sans", "sans-serif"]
     }
   },
   plugins: [],
