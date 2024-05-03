@@ -1,4 +1,6 @@
 const nodemailer = require("nodemailer");
+const User=require('../model/model.js')
+const {validationResult}=require('express-validator')
 const globleData = {
     name: "",
     email: "",
@@ -8,11 +10,14 @@ const globleData = {
 exports.verificationMail = (req,res) => {
     const email = req.body.email;
     // console.log(req.body.email);
-    const transporter = nodemailer.createTransport({
+    const error = validationResult(req);
+
+
+     const transporter = nodemailer.createTransport({
         service:'gmail',
         host: "smtp.gmail.com",
         port: 587,
-        secure: false, // Use `true` for port 465, `false` for all other ports
+        secure: false,
         auth: {
             user: process.env.USER,
             pass: process.env.PASSWORD,
@@ -31,7 +36,7 @@ exports.verificationMail = (req,res) => {
     }
 
     
-        // send mail with defined transport object
+    // send mail with defined transport object
         const sendmail = async (transporter,mailoptions) => {
             try {
                 await transporter.sendMail(mailoptions)
@@ -41,14 +46,39 @@ exports.verificationMail = (req,res) => {
             }
     }
     
-   globleData.name = req.body.name;
-   globleData.email = req.body.email;
+    if (!error.isEmpty())
+    {
+
+        console.log(errors);
+        res.status(400).json(errors)
+    } else
+    {
+        sendmail(transporter,mailoptions)
+        res.status(200).json({msg:"Verificationlink sent to your respected Email"})
+    }
+   
+        
+    globleData.name = req.body.name;
+    globleData.email = req.body.email;
     globleData.password = req.body.password;
-    sendmail(transporter,mailoptions)
     
 }
 
 exports.register = async (req, res) => {
     console.log(globleData.email);
-    res.send('register')
+    const data = await User.findOne({ email: globleData.email });
+    if (data) {
+        res.status(400).json({ msg: "Email Already present" })
+    } else {
+        const result = await User.insertMany({
+            email: globleData.email,
+            name: globleData.name,
+            password: globleData.password,
+            emailVerification: true
+        });
+        result ? res.status(200).json(result) : res.status(400).json({ msg: 'something went wrong' })
+    }
+
+
+    
 }
