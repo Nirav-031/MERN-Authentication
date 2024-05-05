@@ -4,12 +4,76 @@ import logo from '../assets/logo.png'
 
 import {Link} from 'react-router-dom'
 
+import {useFormik} from 'formik'
+
 import { FcGoogle } from "react-icons/fc";
 import { FaApple } from "react-icons/fa";
 import { RxCross1 } from "react-icons/rx";
 import { FaMicrosoft } from "react-icons/fa";
+import loginSchema from '../../validationSchema/loginSchema'
+import axios from 'axios'
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+ 
+import {useCookies} from 'react-cookie'
 
 export default function Login() {
+
+const [cookies,setJWT] =useCookies(["jwt"])
+const initialValues = {
+    email: "",
+    password:""
+  }
+
+
+
+const notify = (msg) => {
+       
+        toast.success(msg, {
+          position: "top-right"
+        });
+  
+       
+  };
+   const errorNotification = (msg,data="") => {
+       
+        toast.error(`${msg} :: ${data}`, {
+          position: "top-right"
+        });
+  
+       
+      };
+
+  const {handleChange,handleSubmit,values,errors,touched } = useFormik({
+    initialValues: initialValues,
+    validationSchema:loginSchema,
+    onSubmit: (values)=>{
+      axios.post('http://localhost:3000/login',
+        {
+          email: values.email,
+          password:values.password
+        }
+      )
+        .then((result) => {
+          console.log('hello');
+          console.log(result.data.tocken);
+          setJWT("jwt", result.data.tocken, { path: "/" });
+          // console.log(cookies.jwt);
+          notify("Login SuccessFully")
+          setTimeout(() => {
+            
+            window.location.href = 'http://localhost:5173/dashboard';
+          },3000)
+        })
+        .catch((error) => {
+          console.log(error.response.data.msg);
+          errorNotification(error.response.data.msg)
+      })
+    }
+   })
+  
+  console.log(errors)
+
   return (
     <div className='w-screen h-screen flex justify-center items-center'>
       <div className='w-[95%] md:w-3/4 h-[90%]  flex   '>
@@ -46,7 +110,7 @@ export default function Login() {
 
             {/*---------Form-------  */}
 
-            <form method="post">
+            <form onSubmit={handleSubmit}>
 
               
 
@@ -55,7 +119,13 @@ export default function Login() {
               <p className='mb-1 font-dem'>
                 Email
               </p>
-              <input type="email" className='w-full h-10 rounded-lg border-[1px] border-[#96BFFF]' />
+                <input type="email"
+                  name='email'
+                   onChange={handleChange}
+                  value={values.email}
+                  className='w-full h-10 rounded-lg border-[1px] border-[#96BFFF]' />
+                  {errors.email && touched.email ? <p className='text-red-500'>{errors.email}</p>:null}
+               
               </div>
 
               <div className='mb-3'>
@@ -64,9 +134,15 @@ export default function Login() {
               <p className='mb-1 font-dem'>
                 Password
               </p>
-              <input type="password" className='w-full h-10 rounded-lg border-[1px] border-[#96BFFF]' />
+                <input type="password"
+                  name='password'
+                  onChange={handleChange}
+                  value={values.password}
+                  className='w-full h-10 rounded-lg border-[1px] border-[#96BFFF]' />
+                  {errors.password && touched.password ? <p className='text-red-500'>{errors.password}</p>:null}
+                
             </div>
-            </form>
+           
             
 
             
@@ -76,9 +152,9 @@ export default function Login() {
 
           { /*--------button------------*/}
           <div className='w-full h-10'>
-            <button className='w-full h-full bg-[#465FF1] font-dem text-white rounded-lg'>Login Account</button>
+            <button type='submit' className='w-full h-full bg-[#465FF1] font-dem text-white rounded-lg'>Login Account</button>
             </div>
-            
+           </form>  
 
             <div className="flex items-center">
                 <hr className="flex-grow border-t border-gray-400"/>
@@ -105,6 +181,7 @@ export default function Login() {
 
         </div>
       </div>
+      <ToastContainer />
     </div>
   )
 }

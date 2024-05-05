@@ -2,9 +2,11 @@ import React, { useState } from 'react'
 import image from '../assets/Group 3.png'
 import logo from '../assets/logo.png'
 
-import {Link} from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import axios from 'axios';
 
 import {useFormik} from 'formik'
+import validationSchema from '../../validationSchema/schema'
 
 import { IoCheckmarkDoneSharp } from "react-icons/io5";
 import { IoCheckmark } from "react-icons/io5";
@@ -12,24 +14,60 @@ import { FcGoogle } from "react-icons/fc";
 import { FaApple } from "react-icons/fa";
 import { RxCross1 } from "react-icons/rx";
 import { FaMicrosoft } from "react-icons/fa";
+
+import { ToastContainer, toast } from 'react-toastify';
+ import 'react-toastify/dist/ReactToastify.css';
 function Register() {
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
 
   const initialValues = {
     name: "",
     email: "",
     password:""
   }
-   const {values,handleChange,handleSubmit}=useFormik({
-    initialValues: initialValues,
-    onSubmit: (value) => {
-      console.log(value)
+
+   const notify = (msg) => {
+       
+        toast.success(msg, {
+          position: "top-right"
+        });
+  
+       
+  };
+   const errorNotification = (data="",msg) => {
+       
+        toast.error(`${msg} :: ${data}`, {
+          position: "top-right"
+        });
+  
+       
+      };
+   const {values,errors,touched,handleChange,handleSubmit}=useFormik({
+     initialValues: initialValues,
+     validationSchema:validationSchema,
+    onSubmit:  (value) => {
+      // console.log(value)
+      
+         axios.post('http://localhost:3000/verificationMail',
+          {
+            name: value.name,
+            email: value.email,
+            password: value.password
+          }).then((result) => {
+            
+            if (result.status == 200)
+            {
+              notify(result.data.msg);
+            }
+          }).catch((error) => {
+            
+            console.log(error.response.data.msg);  
+            errorNotification(error.response.data.value,error.response.data.msg)
+          })
+
     }
   })
   
-  // console.log(values)
+  console.log(errors)
   return (
     <div className='w-screen h-screen flex justify-center items-center'>
       <div className='w-[95%] md:w-3/4 h-[90%]  flex   '>
@@ -79,8 +117,8 @@ function Register() {
                   onChange={handleChange}
                   value={values.name}
                   className='w-full h-10 rounded-lg border-[1px] border-[#96BFFF]' />
+                  {errors.name && touched.name ? <p className='text-red-500'>{errors.name}</p>:null}
               </div>
-
               <div className='mb-3 '>
                 
               <p className='mb-1 font-dem'>
@@ -92,6 +130,8 @@ function Register() {
                   onChange={handleChange}
                   value={values.email}
                   className='w-full h-10 rounded-lg border-[1px] border-[#96BFFF]' />
+                {errors.email && touched.email ? <p className='text-red-500'>{errors.email}</p>:null}
+                
               </div>
 
               <div className='mb-3'>
@@ -105,6 +145,8 @@ function Register() {
                onChange={handleChange}
                   value={values.password}
                   className='w-full h-10 rounded-lg border-[1px] border-[#96BFFF]' />
+                {errors.password && touched.password ? <p className='text-red-500'>{errors.password}</p>:null}
+                
             </div>
             
             
@@ -167,6 +209,7 @@ function Register() {
 
 
         </div>
+      <ToastContainer />
       </div>
     </div>
   )

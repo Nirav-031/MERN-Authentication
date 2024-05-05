@@ -10,7 +10,7 @@ function SendMail()
                         <p className='mt-5 font-dem'>
                             Email
                         </p>
-                        <input placeholder="Enter Email " type="email" className='w-full h-10 rounded-lg border-[1px] border-[#96BFFF]' />
+                        <input placeholder="Enter Email " required type="email" className='w-full h-10 rounded-lg border-[1px] border-[#96BFFF]' />
                     </div>
                     
                     
