@@ -8,5 +8,16 @@ router.post('/verificationMail',
     body('email').isEmail().notEmpty().withMessage('email must be Required'),
     body('password').isLength({ min: 4 }).withMessage('password atleast 4 character').notEmpty().withMessage("password must be required")
     , controller.verificationMail)
-router.get('/register',controller.register)
+
+
+router.get('/register', controller.register)
+
+
+router.post('/login',
+    body('email').isEmail().notEmpty().withMessage('email must be Required'),
+    body('password').isLength({ min: 4 }).withMessage('password atleast 4 character').notEmpty().withMessage("password must be required")
+    ,controller.login)
+
+
+router.post('/dashboard', controller.middleware, controller.home);
 module.exports=router

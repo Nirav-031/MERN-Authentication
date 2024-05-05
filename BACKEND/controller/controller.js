@@ -1,13 +1,15 @@
 const nodemailer = require("nodemailer");
 const User=require('../model/model.js')
-const {validationResult}=require('express-validator')
+const { validationResult } = require('express-validator')
+const bcrypt=require('bcrypt');
+const Tocken = require("../jwt.js");
 const globleData = {
     name: "",
     email: "",
     password:""
 }
 
-exports.verificationMail = (req,res) => {
+exports.verificationMail =async (req,res) => {
     const email = req.body.email;
     // console.log(req.body.email);
     const error = validationResult(req);
@@ -49,12 +51,18 @@ exports.verificationMail = (req,res) => {
     if (!error.isEmpty())
     {
 
-        console.log(errors);
-        res.status(400).json(errors)
+        console.log(error);
+        res.status(400).json(error)
     } else
     {
-        sendmail(transporter,mailoptions)
-        res.status(200).json({msg:"Verificationlink sent to your respected Email"})
+         const data = await User.findOne({ email: req.body.email });
+        if (data) {
+            res.status(400).json({ msg: "Email Already present" })
+        }
+        else {
+            sendmail(transporter, mailoptions)
+            res.status(200).json({ msg: "Verification link sent to your respected Email" })
+        }
     }
    
         
@@ -66,19 +74,56 @@ exports.verificationMail = (req,res) => {
 
 exports.register = async (req, res) => {
     console.log(globleData.email);
-    const data = await User.findOne({ email: globleData.email });
-    if (data) {
-        res.status(400).json({ msg: "Email Already present" })
-    } else {
+   
+    const hashPassword = await bcrypt.hash(globleData.password, 12);
         const result = await User.insertMany({
             email: globleData.email,
             name: globleData.name,
-            password: globleData.password,
+            password:hashPassword,
             emailVerification: true
         });
-        result ? res.status(200).json(result) : res.status(400).json({ msg: 'something went wrong' })
-    }
-
-
+        result ? res.redirect('http://localhost:5173/verification') : res.status(400).json({ msg: 'something went wrong' })
     
+
+}
+
+exports.login = async (req, res) => {
+    const data = await User.findOne({ email: req.body.email });
+    const error = validationResult(req);
+    if (!error.isEmpty()) {
+        res.status(400).json(error)
+        
+    }
+    else {
+        if (data) {
+            const pass = await bcrypt.compare(req.body.password, data.password)
+            if (pass) {
+                const tocken = Tocken.createTocken({ id: data._id, email: data.email })
+                res.status(200).json({tocken});
+                // res.cookie('jwt',tocken,{httpOnly:true})
+            }
+            else
+            {
+                res.status(400).json({ msg: "Password Not Match" });
+            }
+        }
+        else {
+            res.status(400).json({ msg: "please register first" })
+        }
+    }
+}
+
+exports.middleware = (req, res,next) => {
+    const tocken = req.body.tocken;
+    console.log(tocken);
+
+    const data = Tocken.verifyTocken(tocken)
+    console.log(data);
+    req.email = data.email
+    req.client_id=req.id
+    next()
+}
+
+exports.home = (req, res) => {
+    res.status(200).json({id:req.client_id,email:req.email})
 }
